@@ -1,6 +1,7 @@
 
 [![license](https://img.shields.io/github/license/ISISNeutronMuon/SScanSS-2.svg)](https://github.com/ISISNeutronMuon/SScanSS-2/blob/master/LICENSE)
 [![release](https://img.shields.io/github/release/ISISNeutronMuon/SScanSS-2.svg)](https://github.com/ISISNeutronMuon/SScanSS-2/releases)
+[![Actions Status](https://github.com/StephenNneji/SScanSS-2/workflows/Build/badge.svg)](https://github.com/StephenNneji/SScanSS-2/actions)
 
 SScanSS 2
 =================
