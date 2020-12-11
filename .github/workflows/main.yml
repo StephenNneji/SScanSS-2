@@ -31,7 +31,7 @@ jobs:
     - name: Run unit-tests (Windows)
       if: runner.os == 'Windows'
       run: |
-        powershell 3rdparty/workflows/install_opengl.ps1
+        powershell .\3rdparty\install_opengl.ps1
         python build_executable.py
     - name: Upload coverage files
       uses: actions/upload-artifact@v2
