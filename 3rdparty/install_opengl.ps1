@@ -5,7 +5,7 @@
 
 function InstallMesaOpenGL () {
 
-    $url = "opengl32_mingw_64.dll"
+    $url = "3rdparty\opengl32_mingw_64.dll"
     $filepath = "C:\Windows\system32\opengl32.dll"
     
     takeown /F $filepath /A
