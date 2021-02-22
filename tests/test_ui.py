@@ -1,4 +1,3 @@
-import enum
 import pathlib
 import shutil
 import tempfile
@@ -10,31 +9,40 @@ from PyQt5.QtGui import QMouseEvent, QWheelEvent
 from PyQt5.QtWidgets import QApplication, QToolBar, QMessageBox, QComboBox
 from OpenGL.plugins import FormatHandler
 import sscanss.config as config
+from sscanss.core.instrument.simulation import Simulation
 from sscanss.core.scene import Node, Scene
 from sscanss.core.util import Primitives, PointType, DockFlag
 from sscanss.ui.dialogs import (InsertPrimitiveDialog, TransformDialog, SampleManager, InsertPointDialog,
                                 InsertVectorDialog, VectorManager, PickPointDialog, JawControl, PositionerControl,
-                                DetectorControl, PointManager)
+                                DetectorControl, PointManager, SimulationDialog, ScriptExportDialog, PathLengthPlotter,
+                                ProjectDialog, Preferences)
 from sscanss.ui.window.view import MainWindow
 
 
 WAIT_TIME = 5000
 
+FUNC = Simulation.execute
+
+
+def wrapped(args):
+    import logging
+    logging.disable(level=logging.INFO)
+    return FUNC(args)
+
 
 class TestMainWindow(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        FormatHandler('sscanss',
-                      'OpenGL.arrays.numpymodule.NumpyHandler',
-                      ['sscanss.core.math.matrix.Matrix44'])
-        cls.app = QApplication([])
-        cls.window = MainWindow()
-        cls.toolbar = cls.window.findChild(QToolBar)
-        cls.model = cls.window.presenter.model
         cls.data_dir = pathlib.Path(tempfile.mkdtemp())
         cls.ini_file = cls.data_dir / 'settings.ini'
         config.settings.system = QSettings(str(cls.ini_file), QSettings.IniFormat)
         config.LOG_PATH = cls.data_dir / 'logs'
+        FormatHandler('sscanss', 'OpenGL.arrays.numpymodule.NumpyHandler', ['sscanss.core.math.matrix.Matrix44'])
+
+        cls.app = QApplication([])
+        cls.window = MainWindow()
+        cls.toolbar = cls.window.findChild(QToolBar)
+        cls.model = cls.window.presenter.model
         cls.window.show()
         # if not QTest.qWaitForWindowActive(cls.window):
         #     raise unittest.SkipTest('Window is not ready!')
@@ -155,22 +163,23 @@ class TestMainWindow(unittest.TestCase):
         self.positionerControl()
         self.detectorControl()
         self.alignSample()
+        self.runSimulation()
 
     def createProject(self):
         self.window.showNewProjectDialog()
 
         # Test project dialog validation
-        self.assertTrue(self.window.project_dialog.isVisible())
-        self.assertEqual(self.window.project_dialog.validator_textbox.text(), '')
-        QTest.mouseClick(self.window.project_dialog.create_project_button, Qt.LeftButton)
-        self.assertNotEqual(self.window.project_dialog.validator_textbox.text(), '')
+        project_dialog = self.window.findChild(ProjectDialog)
+        self.assertTrue(project_dialog.isVisible())
+        self.assertEqual(project_dialog.validator_textbox.text(), '')
+        QTest.mouseClick(project_dialog.create_project_button, Qt.LeftButton)
+        self.assertNotEqual(project_dialog.validator_textbox.text(), '')
         # Create new project
-        QTest.keyClicks(self.window.project_dialog.project_name_textbox, 'Test')
-        self.window.project_dialog.instrument_combobox.setCurrentText('IMAT')
+        QTest.keyClicks(project_dialog.project_name_textbox, 'Test')
+        project_dialog.instrument_combobox.setCurrentText('IMAT')
         QTimer.singleShot(WAIT_TIME + 100, lambda: self.clickMessageBox(0))
-        QTest.mouseClick(self.window.project_dialog.create_project_button,  Qt.LeftButton)
+        QTest.mouseClick(project_dialog.create_project_button,  Qt.LeftButton)
         QTest.qWait(WAIT_TIME)  # wait is necessary since instrument is created on another thread
-        self.assertFalse(self.window.project_dialog.isVisible())
         self.assertEqual(self.model.project_data['name'], 'Test')
         self.assertEqual(self.model.instrument.name, 'IMAT')
 
@@ -591,7 +600,7 @@ class TestMainWindow(unittest.TestCase):
         self.assertEqual(detector.current_collimator, old_collimator)
 
     def alignSample(self):
-        # Test Detector Widget
+        # Test Sample Alignment
         self.window.docks.showAlignSample()
         widget = self.getDockedWidget(self.window.docks, DetectorControl.dock_flag)
         self.assertIsNone(self.model.alignment)
@@ -610,6 +619,48 @@ class TestMainWindow(unittest.TestCase):
         self.triggerRedo()
         self.assertIsNotNone(self.model.alignment)
 
+    def runSimulation(self):
+        self.model.alignment = self.model.alignment.identity()
+        self.window.check_collision_action.setChecked(True)
+        self.window.check_limits_action.setChecked(False)
+        self.window.compute_path_length_action.setChecked(True)
+
+        Simulation.execute = wrapped
+        self.window.run_simulation_action.trigger()
+        self.assertIsNotNone(self.model.simulation)
+        QTest.qWait(WAIT_TIME//5)
+        self.assertTrue(self.model.simulation.isRunning())
+
+        QTest.qWait(WAIT_TIME * 4)
+        self.assertFalse(self.model.simulation.isRunning())
+        self.assertEqual(len(self.model.simulation.results), 6)
+
+        widget = self.getDockedWidget(self.window.docks, SimulationDialog.dock_flag)
+        self.assertEqual(len(widget.result_list.panes), 6)
+        self.assertFalse(widget._hide_skipped_results)
+        QTest.mouseClick(widget.hide_skipped_button, Qt.LeftButton)
+        self.assertTrue(widget._hide_skipped_results)
+
+        QTest.mouseClick(widget.path_length_button, Qt.LeftButton)
+        path_length_plotter = self.window.findChild(PathLengthPlotter)
+        self.assertTrue(path_length_plotter.isVisible())
+        path_length_plotter.close()
+        self.assertFalse(path_length_plotter.isVisible())
+
+        QTest.mouseClick(widget.export_button, Qt.LeftButton)
+        script_exporter = self.window.findChild(ScriptExportDialog)
+        self.assertTrue(script_exporter.isVisible())
+        script_exporter.close()
+        self.assertFalse(script_exporter.isVisible())
+
+        self.window.fiducial_manager_action.trigger()
+        widget = self.getDockedWidget(self.window.docks, PointManager.dock_flag)
+        self.assertEqual(widget.point_type, PointType.Fiducial)
+        widget = self.getDockedWidget(self.window.docks, SimulationDialog.dock_flag)
+        self.window.simulation_dialog_action.trigger()
+        self.assertFalse(widget.simulation.isRunning())
+        self.assertEqual(len(widget.result_list.panes), 6)
+
     def testOtherWindows(self):
         # Test the Recent project menu
         self.window.recent_projects = []
@@ -618,68 +669,120 @@ class TestMainWindow(unittest.TestCase):
                                        'c://test4.hdf', 'c://test5.hdf', 'c://test6.hdf']
         self.window.populateRecentMenu()
 
-        self.window.showUndoHistory()
+        self.window.undo_view_action.trigger()
         self.assertTrue(self.window.undo_view.isVisible())
         self.window.undo_view.close()
+        self.assertFalse(self.window.undo_view.isVisible())
 
         self.window.progress_dialog.show('Testing')
         self.assertTrue(self.window.progress_dialog.isVisible())
         self.window.progress_dialog.close()
+        self.assertFalse(self.window.progress_dialog.isVisible())
 
         self.window.showAlignmentError()
         self.assertTrue(self.window.alignment_error.isVisible())
         self.window.alignment_error.close()
+        self.assertFalse(self.window.alignment_error.isVisible())
 
     def testSettings(self):
         log_filename = 'main.logs'
         config.setup_logging(log_filename)
         self.assertTrue((config.LOG_PATH / log_filename).exists())
 
-        group = config.settings.Group.Simulation.value
-        key = enum.Enum('key', {'bool': f'{group}/bool', 'integer': f'{group}/integer', 'float': f'{group}/float',
-                                'tuple': f'{group}/tuple', 'no_default': 'no_default'})
+        self.assertTrue(config.settings.value(config.Key.Align_First))
+        config.settings.setValue(config.Key.Align_First, False, True)
+        self.assertFalse(config.settings.value(config.Key.Align_First))
+        config.settings.setValue(config.Key.Align_First, 'true', True)
+        self.assertTrue(config.settings.value(config.Key.Align_First))
+        config.settings.setValue(config.Key.Align_First, -2,  True)
+        self.assertTrue(config.settings.value(config.Key.Align_First))
 
-        config.__defaults__[key.bool] = True
-        config.__defaults__[key.integer] = 150
-        config.__defaults__[key.float] = 2.77
-        config.__defaults__[key.tuple] = (3, 5, 6)
+        item = config.__defaults__[config.Key.Local_Max_Eval]
+        self.assertEqual(config.settings.value(config.Key.Local_Max_Eval), item.default)
+        config.settings.setValue(config.Key.Local_Max_Eval, item.limits[1] + 1, True)
+        self.assertEqual(config.settings.value(config.Key.Local_Max_Eval), item.default)
+        config.settings.setValue(config.Key.Local_Max_Eval, item.limits[0] - 1, True)
+        self.assertEqual(config.settings.value(config.Key.Local_Max_Eval), item.default)
+        config.settings.setValue(config.Key.Local_Max_Eval, item.limits[1] - 1, True)
+        self.assertEqual(config.settings.value(config.Key.Local_Max_Eval), item.limits[1] - 1)
 
-        self.assertTrue(config.settings.value(key.bool))
-        config.settings.setValue(key.bool, False, True)
-        self.assertFalse(config.settings.value(key.bool))
+        item = config.__defaults__[config.Key.Angular_Stop_Val]
+        self.assertEqual(config.settings.value(config.Key.Angular_Stop_Val), item.default)
+        config.settings.setValue(config.Key.Angular_Stop_Val, item.limits[1] + 1, True)
+        self.assertEqual(config.settings.value(config.Key.Angular_Stop_Val), item.default)
+        config.settings.setValue(config.Key.Angular_Stop_Val, item.limits[0] - 1, True)
+        self.assertEqual(config.settings.value(config.Key.Angular_Stop_Val), item.default)
+        config.settings.setValue(config.Key.Angular_Stop_Val, item.limits[1] - 1, True)
+        self.assertEqual(config.settings.value(config.Key.Angular_Stop_Val), item.limits[1] - 1)
 
-        self.assertEqual(config.settings.value(key.integer), config.__defaults__[key.integer])
-        self.assertEqual(config.settings.value(key.float), config.__defaults__[key.float])
-        self.assertEqual(config.settings.value(key.tuple), config.__defaults__[key.tuple])
-        self.assertRaises(KeyError, config.settings.value, key.no_default)
+        item = config.__defaults__[config.Key.Fiducial_Colour]
+        self.assertEqual(config.settings.value(config.Key.Fiducial_Colour), item.default)
+        config.settings.setValue(config.Key.Fiducial_Colour, (2, 3, 4, 5), True)
+        self.assertEqual(config.settings.value(config.Key.Fiducial_Colour), item.default)
+        config.settings.setValue(config.Key.Fiducial_Colour, (2, 3, 4), True)
+        self.assertEqual(config.settings.value(config.Key.Fiducial_Colour), item.default)
+        config.settings.setValue(config.Key.Fiducial_Colour, ("h", "1.0", "1.0", "1.0"), True)
+        self.assertEqual(config.settings.value(config.Key.Fiducial_Colour), item.default)
+        config.settings.setValue(config.Key.Fiducial_Colour, ("1.0", "1.0", "1.0", "1.0"), True)
+        self.assertEqual(config.settings.value(config.Key.Fiducial_Colour), (1, 1, 1, 1))
+        config.settings.setValue(config.Key.Fiducial_Colour, (2, 3, 4, 5), True)
+        self.assertEqual(config.settings.value(config.Key.Fiducial_Colour), item.default)
+
+        item = config.__defaults__[config.Key.Geometry]
+        self.assertEqual(config.settings.value(config.Key.Geometry), item.default)
+        config.settings.setValue(config.Key.Geometry, '12345', True)
+        self.assertEqual(config.settings.value(config.Key.Geometry), item.default)
+        config.settings.setValue(config.Key.Geometry, bytearray(b'12345'), True)
+        self.assertEqual(config.settings.value(config.Key.Geometry), bytearray(b'12345'))
+
+        item = config.__defaults__[config.Key.Recent_Projects]
+        self.assertEqual(config.settings.value(config.Key.Recent_Projects), item.default)
+        config.settings.setValue(config.Key.Recent_Projects, 'name', True)
+        self.assertEqual(config.settings.value(config.Key.Recent_Projects), ['name'])
+        config.settings.setValue(config.Key.Recent_Projects, ['name', 'other'], True)
+        self.assertEqual(config.settings.value(config.Key.Recent_Projects), ['name', 'other'])
 
         config.settings.system.sync()
         self.assertTrue(self.ini_file.samefile(config.settings.filename()))
 
+        config.settings.setValue(config.Key.Align_First, False, True)
         config.settings.reset()
-        self.assertFalse(config.settings.value(key.bool))
+        self.assertFalse(config.settings.value(config.Key.Align_First))
         config.settings.reset(True)
-        self.assertTrue(config.settings.value(key.bool))
+        self.assertTrue(config.settings.value(config.Key.Align_First))
+        config.settings.setValue(config.Key.Align_First, False)
+        self.assertNotEqual(config.settings.value(config.Key.Align_First),
+                            config.settings.system.value(config.Key.Align_First.value))
 
         self.window.showPreferences()
-        self.assertTrue(self.window.preferences.isVisible())
-        comboboxes = self.window.preferences.findChildren(QComboBox)
+        preferences = self.window.findChild(Preferences)
+        self.assertTrue(preferences.isVisible())
+        comboboxes = preferences.findChildren(QComboBox)
 
         combo = comboboxes[0]
         current_index = combo.currentIndex()
         new_index = (current_index + 1) % combo.count()
         combo.setCurrentIndex(new_index)
-        self.assertTrue(self.window.preferences.accept_button.isEnabled())
+        self.assertTrue(preferences.accept_button.isEnabled())
         combo.setCurrentIndex(current_index)
-        self.assertFalse(self.window.preferences.accept_button.isEnabled())
+        self.assertFalse(preferences.accept_button.isEnabled())
         combo.setCurrentIndex(new_index)
-        stored_key, old_value = combo.property(self.window.preferences.prop_name)
+        stored_key, old_value = combo.property(preferences.prop_name)
         self.assertEqual(config.settings.value(stored_key), old_value)
-        QTest.mouseClick(self.window.preferences.accept_button, Qt.LeftButton, delay=100)
+        QTest.mouseClick(preferences.accept_button, Qt.LeftButton, delay=100)
         self.assertNotEqual(config.settings.value(stored_key), old_value)
-        self.assertFalse(self.window.preferences.isVisible())
+        self.assertFalse(preferences.isVisible())
+        QTest.qWait(WAIT_TIME//50)
         self.window.showPreferences()
-        QTest.mouseClick(self.window.preferences.reset_button, Qt.LeftButton, delay=100)
-        self.assertFalse(self.window.preferences.isVisible())
+        preferences = self.window.findChild(Preferences)
+        self.assertTrue(preferences.isVisible())
+        QTest.mouseClick(preferences.reset_button, Qt.LeftButton, delay=100)
+        self.assertFalse(preferences.isVisible())
+        QTest.qWait(WAIT_TIME // 50)
+        self.window.presenter.model.project_data = {}
         self.window.showPreferences()
-        QTest.mouseClick(self.window.preferences.cancel_button, Qt.LeftButton, delay=100)
+        preferences = self.window.findChild(Preferences)
+        self.assertTrue(preferences.isVisible())
+        QTest.mouseClick(preferences.cancel_button, Qt.LeftButton, delay=100)
+        self.assertFalse(preferences.isVisible())
+        QTest.qWait(WAIT_TIME // 50)

@@ -5,6 +5,11 @@ from sscanss.config import settings
 
 
 class Preferences(QtWidgets.QDialog):
+    """Provides UI for modifying global and project specific preferences
+
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     prop_name = 'key-value'
 
     def __init__(self, parent):
@@ -76,6 +81,7 @@ class Preferences(QtWidgets.QDialog):
         self.setWindowTitle('Preferences')
         self.setMinimumSize(640, 480)
         self.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
     def createForms(self):
         self.generalForm()
@@ -91,23 +97,49 @@ class Preferences(QtWidgets.QDialog):
 
         frame = QtWidgets.QWidget()
         main_layout = QtWidgets.QVBoxLayout()
-        main_layout.setSpacing(15)
+        main_layout.setSpacing(10)
+
+        layout = QtWidgets.QVBoxLayout()
+        key = settings.Key.Skip_Zero_Vectors
+        value = settings.value(key)
+        layout.addWidget(create_header('Zero Measurement Vector:'))
+        group = QtWidgets.QWidget()
+        group_layout = QtWidgets.QVBoxLayout()
+        group_layout.setContentsMargins(0, 0, 0, 0)
+        radio_button_1 = QtWidgets.QRadioButton('Skip the measurement')
+        radio_button_1.setChecked(value)
+        radio_button_1.setProperty(self.prop_name, (key, value))
+        radio_button_1.toggled.connect(lambda: self.changeSetting(True))
+        radio_button_2 = QtWidgets.QRadioButton('Perform translation but no rotation')
+        radio_button_2.setChecked(not value)
+        radio_button_2.setProperty(self.prop_name, (key, value))
+        radio_button_2.toggled.connect(lambda: self.changeSetting(False))
+        group.setLayout(group_layout)
+        group_layout.addWidget(radio_button_1)
+        group_layout.addWidget(radio_button_2)
+        layout.addWidget(group)
+        layout.addStretch(1)
+        main_layout.addLayout(layout)
 
         layout = QtWidgets.QVBoxLayout()
         key = settings.Key.Align_First
         value = settings.value(key)
         layout.addWidget(create_header('Execution Order:'))
+        group = QtWidgets.QWidget()
+        group_layout = QtWidgets.QVBoxLayout()
+        group_layout.setContentsMargins(0, 0, 0, 0)
         radio_button_1 = QtWidgets.QRadioButton('Run alignments before next point', frame)
         radio_button_1.setChecked(value)
         radio_button_1.setProperty(self.prop_name, (key, value))
         radio_button_1.toggled.connect(lambda: self.changeSetting(True))
-
         radio_button_2 = QtWidgets.QRadioButton('Run next point before alignments', frame)
         radio_button_2.setChecked(not value)
         radio_button_2.setProperty(self.prop_name, (key, value))
         radio_button_2.toggled.connect(lambda: self.changeSetting(False))
-        layout.addWidget(radio_button_1)
-        layout.addWidget(radio_button_2)
+        group.setLayout(group_layout)
+        group_layout.addWidget(radio_button_1)
+        group_layout.addWidget(radio_button_2)
+        layout.addWidget(group)
         layout.addStretch(1)
         main_layout.addLayout(layout)
 
@@ -115,10 +147,11 @@ class Preferences(QtWidgets.QDialog):
         layout = QtWidgets.QHBoxLayout()
         key = settings.Key.Position_Stop_Val
         value = settings.value(key)
+        lim = settings.default(key).limits
         layout.addWidget(QtWidgets.QLabel('Position termination tolerance (mm): '))
         spin = QtWidgets.QDoubleSpinBox()
         spin.setDecimals(3)
-        spin.setMinimum(0.000)
+        spin.setRange(*lim)
         spin.setValue(settings.value(key))
         spin.setProperty(self.prop_name, (key, value))
         spin.valueChanged.connect(self.changeSetting)
@@ -130,10 +163,11 @@ class Preferences(QtWidgets.QDialog):
         layout = QtWidgets.QHBoxLayout()
         key = settings.Key.Angular_Stop_Val
         value = settings.value(key)
+        lim = settings.default(key).limits
         layout.addWidget(QtWidgets.QLabel('Orientation termination tolerance (degrees): '))
         spin = QtWidgets.QDoubleSpinBox()
         spin.setDecimals(3)
-        spin.setRange(0.000, 360.000)
+        spin.setRange(*lim)
         spin.setValue(settings.value(key))
         spin.setProperty(self.prop_name, (key, value))
         spin.valueChanged.connect(self.changeSetting)
@@ -145,9 +179,10 @@ class Preferences(QtWidgets.QDialog):
         layout = QtWidgets.QHBoxLayout()
         key = settings.Key.Global_Max_Eval
         value = settings.value(key)
-        layout.addWidget(QtWidgets.QLabel('Number of evaluations for global optimization (50 - 500): '))
+        lim = settings.default(key).limits
+        layout.addWidget(QtWidgets.QLabel(f'Number of evaluations for global optimization ({lim[0]} - {lim[1]}): '))
         spin = QtWidgets.QSpinBox()
-        spin.setRange(50, 500)
+        spin.setRange(*lim)
         spin.setValue(settings.value(key))
         spin.setProperty(self.prop_name, (key, value))
         spin.valueChanged.connect(self.changeSetting)
@@ -159,9 +194,10 @@ class Preferences(QtWidgets.QDialog):
         layout = QtWidgets.QHBoxLayout()
         key = settings.Key.Local_Max_Eval
         value = settings.value(key)
-        layout.addWidget(QtWidgets.QLabel('Number of evaluations for local optimization (500 - 5000): '))
+        lim = settings.default(key).limits
+        layout.addWidget(QtWidgets.QLabel(f'Number of evaluations for local optimization ({lim[0]} - {lim[1]}): '))
         spin = QtWidgets.QSpinBox()
-        spin.setRange(500, 5000)
+        spin.setRange(*lim)
         spin.setValue(value)
         spin.setProperty(self.prop_name, (key, value))
         spin.valueChanged.connect(self.changeSetting)

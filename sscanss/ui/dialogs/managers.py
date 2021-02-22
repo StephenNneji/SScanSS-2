@@ -8,6 +8,11 @@ from sscanss.ui.widgets import (PointModel, FormControl, FormGroup, FormTitle, c
 
 
 class SampleManager(QtWidgets.QWidget):
+    """Provides UI for merging, deleting, and set main sample
+
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     dock_flag = DockFlag.Bottom
 
     def __init__(self, parent):
@@ -99,6 +104,13 @@ class SampleManager(QtWidgets.QWidget):
 
 
 class PointManager(QtWidgets.QWidget):
+    """Provides UI for viewing, deleting, reordering, and editing measurement/fiducial points
+
+    :param point_type: point type
+    :type point_type: PointType
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     dock_flag = DockFlag.Bottom
 
     def __init__(self, point_type, parent):
@@ -220,6 +232,11 @@ class PointManager(QtWidgets.QWidget):
 
 
 class VectorManager(QtWidgets.QWidget):
+    """Provides UI for viewing, and deleting measurement vectors or alignments
+
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     dock_flag = DockFlag.Bottom
 
     def __init__(self, parent):
@@ -329,7 +346,7 @@ class VectorManager(QtWidgets.QWidget):
         self.alignment_combobox.clear()
         self.alignment_combobox.addItems(alignment_list)
         current_alignment = alignment if 0 < alignment < len(alignment_list) else 0
-        self.alignment_combobox.setCurrentIndex(alignment)
+        self.alignment_combobox.setCurrentIndex(current_alignment)
 
         return current_alignment
 
@@ -346,10 +363,6 @@ class VectorManager(QtWidgets.QWidget):
         detector_index = self.detector_combobox.currentIndex()
         alignment_index = self.alignment_combobox.currentIndex()
 
-        vectors = self.parent_model.measurement_vectors[indices, slice(detector_index * 3, detector_index * 3 + 3),
-                                                        alignment_index]
-        if (vectors < 0.001).all():
-            return
         self.parent.presenter.removeVectors(indices, detector_index, alignment_index)
 
     def closeEvent(self, event):
@@ -358,6 +371,11 @@ class VectorManager(QtWidgets.QWidget):
 
 
 class JawControl(QtWidgets.QWidget):
+    """Provides UI for controlling the jaw's positioner and aperture size
+
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     dock_flag = DockFlag.Full
 
     def __init__(self, parent):
@@ -387,7 +405,7 @@ class JawControl(QtWidgets.QWidget):
         self.title = f'Configure {self.instrument.jaws.name}'
         self.setMinimumWidth(450)
         self.parent_model.instrument_controlled.connect(self.updateForms)
-        self.parent.scenes.toggleVisibility(Attributes.Beam, True)
+        self.parent.scenes.changeVisibility(Attributes.Beam, True)
 
     def updateForms(self, command_id):
         if command_id == CommandID.ChangeJawAperture:
@@ -510,14 +528,22 @@ class JawControl(QtWidgets.QWidget):
     def changeApertureButtonClicked(self):
         aperture = [self.aperture_form_group.form_controls[0].value,
                     self.aperture_form_group.form_controls[1].value]
-        self.parent.presenter.changeJawAperture(aperture)
+
+        if aperture != self.instrument.jaws.aperture:
+            self.parent.presenter.changeJawAperture(aperture)
 
     def closeEvent(self, event):
-        self.parent.scenes.toggleVisibility(Attributes.Beam, False)
+        self.parent.scenes.changeVisibility(Attributes.Beam, False)
         event.accept()
 
 
 class PositionerControl(QtWidgets.QWidget):
+    """Provides UI for selecting positioning stack, setting joint
+    positions, locking joints and removing joint limits
+
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     dock_flag = DockFlag.Full
 
     def __init__(self, parent):
@@ -739,6 +765,13 @@ class PositionerControl(QtWidgets.QWidget):
 
 
 class DetectorControl(QtWidgets.QWidget):
+    """Provides UI for controlling a detector's positioner
+
+    :param detector: name of the detector
+    :type detector: str
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     dock_flag = DockFlag.Full
 
     def __init__(self, detector, parent):
@@ -768,7 +801,7 @@ class DetectorControl(QtWidgets.QWidget):
         self.title = 'Configure Detector' if detector_count == 1 else f'Configure {detector} Detector'
         self.setMinimumWidth(450)
         self.parent_model.instrument_controlled.connect(self.updateForms)
-        self.parent.scenes.toggleVisibility(Attributes.Beam, True)
+        self.parent.scenes.changeVisibility(Attributes.Beam, True)
 
     def updateForms(self, command_id):
         if command_id == CommandID.MovePositioner:
@@ -857,5 +890,5 @@ class DetectorControl(QtWidgets.QWidget):
             self.parent.presenter.movePositioner(name, q)
 
     def closeEvent(self, event):
-        self.parent.scenes.toggleVisibility(Attributes.Beam, False)
+        self.parent.scenes.changeVisibility(Attributes.Beam, False)
         event.accept()

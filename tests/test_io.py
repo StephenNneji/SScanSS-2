@@ -21,11 +21,12 @@ class TestIO(unittest.TestCase):
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
 
+    @mock.patch('sscanss.core.io.writer.settings', autospec=True)
     @mock.patch('sscanss.core.instrument.create.read_visuals', autospec=True)
-    def testHDFReadWrite(self, mocked_function):
+    def testHDFReadWrite(self, visual_fn, setting_cls):
 
-        mocked_function.return_value = Mesh(np.array([[0, 0, 0], [0, 1, 0], [0, 1, 1]]), np.array([0, 1, 2]),
-                                            np.array([[1, 0, 0], [1, 0, 0], [1, 0, 0]]))
+        visual_fn.return_value = Mesh(np.array([[0, 0, 0], [0, 1, 0], [0, 1, 1]]), np.array([0, 1, 2]),
+                                      np.array([[1, 0, 0], [1, 0, 0], [1, 0, 0]]))
         filename = self.writeTestFile('instrument.json', SAMPLE_IDF)
         instrument = read_instrument_description_file(filename)
         data = {'name': 'Test Project',
@@ -51,6 +52,7 @@ class TestIO(unittest.TestCase):
         self.assertTrue(result['measurement_points'][0].size == 0 and result['measurement_points'][1].size == 0)
         self.assertTrue(result['measurement_vectors'].size == 0)
         self.assertIsNone(result['alignment'])
+        self.assertEqual(result['settings'], {})
 
         sample_key = 'a mesh'
         vertices = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]])
@@ -61,7 +63,14 @@ class TestIO(unittest.TestCase):
                                  dtype=[('points', 'f4', 3), ('enabled', '?')])
         points = np.rec.array([([1., 2., 3.], True), ([4., 5., 6.], False), ([7., 8., 9.], True)],
                               dtype=[('points', 'f4', 3), ('enabled', '?')])
-        vectors = np.ones((3, 3, 2))
+        vectors = np.zeros((3, 3, 2))
+        vectors[:, :, 0] = [[0.0000076, 1.0000000, 0.0000480],
+                            [0.0401899, 0.9659270, 0.2556752],
+                            [0.1506346, 0.2589932, 0.9540607]]
+
+        vectors[:, :, 1] = [[0.1553215, -0.0000486, 0.9878640],
+                            [0.1499936, -0.2588147, 0.9542100],
+                            [0.0403915, -0.9658791, 0.2558241]]
         base = Matrix44(np.random.random((4, 4)))
         stack_name = 'Positioning Table + Huber Circle'
         new_collimator = 'Snout 100mm'
@@ -88,6 +97,8 @@ class TestIO(unittest.TestCase):
         instrument.detectors['Detector'].positioner.links[0].ignore_limits = True
         instrument.detectors['Detector'].positioner.links[1].locked = True
 
+        setting_cls.local = {'num': 1, 'str': 'string', 'colour': (1, 1, 1, 1)}
+
         writer.write_project_hdf(data, filename)
         result, instrument2 = reader.read_project_hdf(filename)
         self.assertEqual(__version__, result['version'])
@@ -97,12 +108,19 @@ class TestIO(unittest.TestCase):
         self.assertTrue(sample_key in result['sample'])
         np.testing.assert_array_almost_equal(fiducials.points, result['fiducials'][0], decimal=5)
         np.testing.assert_array_almost_equal(points.points,  result['measurement_points'][0], decimal=5)
+        np.testing.assert_array_almost_equal(result['sample'][sample_key].vertices, vertices, decimal=5)
+        np.testing.assert_array_almost_equal(result['sample'][sample_key].indices, indices, decimal=5)
+        np.testing.assert_array_almost_equal(result['sample'][sample_key].normals, normals, decimal=5)
         np.testing.assert_array_almost_equal(fiducials.points, result['fiducials'][0], decimal=5)
         np.testing.assert_array_almost_equal(points.points,  result['measurement_points'][0], decimal=5)
         np.testing.assert_array_equal(fiducials.enabled, result['fiducials'][1])
         np.testing.assert_array_equal(points.enabled, result['measurement_points'][1])
         np.testing.assert_array_almost_equal(vectors, result['measurement_vectors'], decimal=5)
         np.testing.assert_array_almost_equal(result['alignment'], np.identity(4), decimal=5)
+        setting = result['settings']
+        self.assertEqual(setting['num'], 1)
+        self.assertEqual(setting['str'], 'string')
+        self.assertEqual(tuple(setting['colour']), (1, 1, 1, 1))
 
         self.assertEqual(instrument.positioning_stack.name, instrument2.positioning_stack.name)
         np.testing.assert_array_almost_equal(instrument.positioning_stack.configuration,
@@ -132,6 +150,18 @@ class TestIO(unittest.TestCase):
         for link1, link2 in zip(detector1.positioner.links, detector2.positioner.links):
             self.assertEqual(link1.ignore_limits, link2.ignore_limits)
             self.assertEqual(link1.locked, link2.locked)
+
+        data['measurement_vectors'] = np.ones((3, 3, 2))  # invalid normals
+        writer.write_project_hdf(data, filename)
+        self.assertRaises(ValueError, reader.read_project_hdf, filename)
+
+        data['measurement_vectors'] = np.ones((3, 6, 2))  # more vector than detectors
+        writer.write_project_hdf(data, filename)
+        self.assertRaises(ValueError, reader.read_project_hdf, filename)
+
+        data['measurement_vectors'] = np.ones((4, 3, 2))  # more vectors than points
+        writer.write_project_hdf(data, filename)
+        self.assertRaises(ValueError, reader.read_project_hdf, filename)
 
     def testReadObj(self):
         # Write Obj file
@@ -204,6 +234,9 @@ class TestIO(unittest.TestCase):
             expected = [['1.0', '2.0', '3.0'], ['4.0', '5.0', '6.0'], ['7.0', '8.0', '9.0']]
 
             np.testing.assert_array_equal(data, expected)
+
+        filename = self.writeTestFile('test.csv', '')
+        self.assertRaises(ValueError, reader.read_csv, filename)
 
     def testReadPoints(self):
         csv = '1.0, 2.0, 3.0\n4.0, 5.0, 6.0\n7.0, 8.0, 9.0\n'
@@ -324,6 +357,35 @@ class TestIO(unittest.TestCase):
         csv = '1, 1.0, 2.0, 3.0, 4.0, 5.0, -inf, 7.0\n, 2, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0\n'
         filename = self.writeTestFile('test.csv', csv)
         self.assertRaises(ValueError, reader.read_fpos, filename)
+
+    def testValidateVectorLength(self):
+        vectors = np.ones((3, 3, 2))
+        self.assertFalse(reader.validate_vector_length(vectors))
+
+        vectors = np.zeros((3, 3, 2))
+        self.assertTrue(reader.validate_vector_length(vectors))
+
+        vectors[:, :, 0] = [[0.0000076, 1.0000000, 0.0000480],
+                            [0.0401899, 0.9659270, 0.2556752],
+                            [0.1506346, 0.2589932, 0.9540607]]
+
+        vectors[:, :, 1] = [[0.1553215, -0.0000486, 0.9878640],
+                            [0.1499936, -0.2588147, 0.9542100],
+                            [0.0403915, -0.9658791, 0.2558241]]
+        self.assertTrue(reader.validate_vector_length(vectors))
+
+        vectors = np.zeros((3, 6, 1))
+        vectors[:, :3, 0] = [[0.0000076, 1.0000000, 0.0000480],
+                            [0.00000000, 0.0000000, 0.0000000],
+                            [0.1506346, 0.2589932, 0.9540607]]
+
+        vectors[:, 3:, 0] = [[0.1553215, -0.0000486, 0.9878640],
+                            [0.1499936, -0.2588147, 0.9542100],
+                            [0.0403915, -0.9658791, 0.2558241]]
+        self.assertTrue(reader.validate_vector_length(vectors))
+
+        vectors[0, 0, 0] = 10
+        self.assertFalse(reader.validate_vector_length(vectors))
 
     def writeTestFile(self, filename, text):
         full_path = os.path.join(self.test_dir, filename)

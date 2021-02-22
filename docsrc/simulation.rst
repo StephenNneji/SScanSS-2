@@ -2,7 +2,8 @@
 Simulating Experiments
 ######################
 The main goal of SScanSS is to compute positioner offsets for the real-world experiment. This can be achieved by running
-a simulation: to run a simulation, click  **Simulation > Run Simulation** and to stop the simulation **Simulation > Stop Simulation**.
+a simulation. To run a simulation, click **Simulation > Run Simulation** and to stop the simulation, click
+**Simulation > Stop Simulation**.
 
 .. tip::
    You can start and stop a simulation using keyboard shortcuts **F5** and **Shift+F5** respectively
@@ -12,8 +13,8 @@ a simulation: to run a simulation, click  **Simulation > Run Simulation** and to
    :alt: Simulation Result Dialog
    :align: center
 
-The **Simulation Result** window should open shortly after the simulation is started and the results will be added to the
-window to the end of the list. The progress bar shows the number of measurements that have been completed. The
+The **Simulation Result** window should open shortly after the simulation is started and the results will be appended
+incrementally to a list in the window. The progress bar shows the number of measurements that have been completed. The
 **Simulation Result** window cannot be closed while the simulation is running, stop the simulation if you need to close
 the dialog.
 
@@ -22,38 +23,52 @@ the dialog.
     while this is not a serious issue it is a known problem.
 
 After closing the window, you can view and export completed results without re-running the simulation by opening
-the **Simulation Result** window, to do this click **View > Other Windows > Simulation Results**.
+the **Simulation Result** window, to do this click **View > Other Windows > Simulation Results**. The result for each
+measurement point and alignment can be seen in the result list. The result shows the point index and alignment index
+(where applicable), the 3D position and orientation error. The result will also show path length, and collision
+information when they are enabled in the :ref:`quick settings`. Clicking on the label for a single result will reveal
+the computed positioner offsets which could be useful for quick verification.
 
 .. image:: images/sim_result_expand.png
    :scale: 80
    :alt: Simulation Result Expanded
    :align: center
 
-The result for each measurement point and alignment can be seen in the result list. The result show the
-point index and alignment index (where applicable), the 3D position and orientation error. The result will also show path
-length, and collision information when they are enabled in the :ref:`quick settings`.
-Clicking on the label for a single result will reveal the computed positioner offset which could be useful for quick
-verification, these offsets can be copied to the operating system clipboard by right clicking on the label and selecting
-**copy**. When the simulation is complete, individual result can be visualized by right clicking on the label and selecting
+The positioner offsets can be copied to the operating system clipboard by right clicking on the label and selecting
+**copy**. When a simulation is complete, individual result can be visualized by right clicking on the label and selecting
 **visualize**.
-
-.. warning::
-    The point index in the **Simulation Result** window may not correspond to the measurement point index in the point
-    manager if you have disabled any measurement points.
 
 .. image:: images/sim_result_context.png
    :scale: 80
-   :alt: Simulation Result Expanded
+   :alt: Simulation Result Context Menu
+   :align: center
+
+Any results that are skipped, for example, because the measurement point is disabled will be shown in the result list
+with the reason why the measurement is skipped. The skipped results can be hidden or shown by toggle the |hide| button
+in the **Simulation Result** window.
+
+.. image:: images/sim_skip.png
+   :scale: 80
+   :alt: Simulation Result with Skipped Measurement
    :align: center
 
 The simulation may not achieve the desired positional or orientational accuracy because of joint limits, insufficient
-degrees of freedom, or software's failure to converge. The label for such results will be highlighted in yellow and the
-poor accuracy will be written in red text. If the poor accuracy is due to software's failure to converge,
+degrees of freedom, or the software's failure to converge. The label for such results will be highlighted in yellow and
+the poor accuracy will be written in red text. If the poor accuracy is due to software's failure to converge,
 try modifying the :ref:`advanced options` to improve convergence.
 
 .. image:: images/sim_result_errors.png
    :scale: 80
-   :alt: Simulation Result Error
+   :alt: Simulation Result Unreached Error
+   :align: center
+
+While very rare, the simulation may crash because of errors in the optimization library. The software will log the error
+on the problematic point and attempt to continue the remaining measurements in the simulation. The label for such
+results will be highlighted in red.
+
+.. image:: images/sim_error.png
+   :scale: 80
+   :alt: Simulation Result Runtime Error
    :align: center
 
 **************
@@ -71,18 +86,19 @@ simulations with 100 or more measurements may benefit from the speed increase if
 Hardware limit
 ==============
 During simulation, positioning system limits are checked by default, this can be toggled by clicking **Simulation > Hardware Limits Check**
-When disabled, all the joint limits on the positioning system are ignored (to ignore limit on a single joint see Positioning System).
-When enabled, any joint limits that are not explicitly disabled in the positioning system window will be checked.
+When disabled, all the joint limits on the positioning system are ignored (to ignore the limit on a single joint see
+:ref:`Positioning system <Positioning system settings>`). When enabled, any joint limits that are not explicitly
+disabled in the positioning system window will be checked.
 
 Collision detection
 ===================
 Collision detection is disabled by default, it can be toggled by clicking **Simulation > Collision Detection**.
-When activated, SScanSS-2 will check for collisions at the final sample pose of each measurement and highlight the
+When activated, SScanSS 2 will check for collisions at the final sample pose of each measurement and highlight the
 colliding bodies in the graphic window (if **Show Graphically** is enabled). The simulation results will also indicate
 the point and alignment at which the collision occurred.
 
 .. warning::
-    Even though the collision detection in SScanSS-2 is reasonably robust, it should not be a substitute for your eyes
+    Even though the collision detection in SScanSS 2 is reasonably robust, it should not be a substitute for your eyes
     but a complement. The following should be taken into account:
 
     1. The software cannot check collisions for objects that are not present such as sample holders, or incomplete models
@@ -94,9 +110,10 @@ the point and alignment at which the collision occurred.
 Path length calculation
 =======================
 Path length calculation is disabled by default, it can be toggled by clicking **Simulation > Compute Path Length**.
-Path lengths are calculated by checking the distance the beam travels within the sample model. It assumes that the
-beam starts outside the sample and every pair of face intersections is taken as beam entry and exit from the sample.
-The path length is set to zero if beam hits the gauge volume outside the sample or an entry/exit face pair is not found.
+Path lengths are calculated by checking the distance the beam travels within the
+:ref:`main sample model <Change main sample>` (other samples would be ignored). It assumes that the beam starts outside
+the sample and every pair of face intersections is taken as beam entry and exit from the sample. The path length is set
+to zero if beam hits the gauge volume outside the sample or an entry/exit face pair is not found.
 
 .. warning::
     The path length might be incorrect if the sample has missing faces or spurious faces due to poor scanning
@@ -125,23 +142,33 @@ More advanced option for simulation can be accessed by clicking **Simulation > S
 options can be changed from the dialog:
 
 .. note::
-   SScanSS-2 uses global optimization technique to solve the inverse kinematics problem for each measurement. The
+   SScanSS 2 uses global optimization technique to solve the inverse kinematics problem for each measurement. The
    optimization is a two-phase method that combines a global stepping algorithm with local minimization at each step.
+
+* **Zero Measurement Vector**
+
+  During simulation, when all the measurement vectors for a particular measurement are zero vectors, the software
+  can be configured to translate the sample and keep orientation fixed (*Perform translation but no rotation*) which
+  is the default or to skip those measurements (*Skip the measurement*).
 
 * **Execution Order**
 
   When a project contains more than one measurement vector alignment, experiments can be run by measuring each point
   before changing the alignment (*Run next point before alignments*) or by measuring each alignment before moving to
   the next point (*Run alignments before next point*).
+
 * **Position termination tolerance**
 
   The desired position accuracy which when achieved the positional part of the inverse kinematics is considered successful
+
 * **Orientation termination tolerance**
 
   The desired orientation accuracy which when achieved the orientational part of the inverse kinematics is considered successful
+
 * **Number of evaluations for global optimization**
 
   The maximum number of evaluations of the inverse kinematics objective function by the global optimizer
+
 * **Number of evaluations for local optimization**
 
   The maximum number of evaluations of the inverse kinematics objective function by the local optimizer
@@ -150,4 +177,7 @@ options can be changed from the dialog:
             :scale: 10
 
 .. |plot| image:: images/plot.png
+            :scale: 10
+
+.. |hide| image:: images/minus.png
             :scale: 10

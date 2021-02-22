@@ -13,7 +13,7 @@ from sscanss.ui.commands import (InsertPrimitive, DeleteSample, MergeSample,
                                  ChangeCollimator, ChangeJawAperture, RemoveVectorAlignment, InsertAlignmentMatrix)
 from sscanss.core.io import read_trans_matrix, read_fpos
 from sscanss.core.util import TransformType, MessageSeverity, Worker, toggleActionInGroup, PointType
-from sscanss.core.math import matrix_from_pose, find_3d_correspondence, rigid_transform, check_rotation
+from sscanss.core.math import matrix_from_pose, find_3d_correspondence, rigid_transform, check_rotation, VECTOR_EPS
 
 
 @unique
@@ -119,8 +119,8 @@ class MainWindowPresenter:
         self.notifyError(msg, exception)
 
     def saveProject(self, save_as=False):
-        """Saves a project to a file. A file dialog will be opened for the first save
-        after which the function will save to the same location. if save_as id True a dialog is
+        """Saves a project to a file. A file dialog should be opened for the first save
+        after which the function will save to the same location. if save_as is True a dialog is
         opened every time
 
         :param save_as: A flag denoting whether to use file dialog or not
@@ -168,7 +168,7 @@ class MainWindowPresenter:
         self.view.docks.closeAll()
         filename = args[0]
         if isinstance(exception, ValueError):
-            msg = f'{filename} could not open because it has incorrect data.'
+            msg = f'Project data could not be read from {filename} because it has incorrect data: {exception}'
         elif isinstance(exception, (KeyError, AttributeError)):
             msg = f'{filename} could not open because it has an incorrect format.'
         elif isinstance(exception, OSError):
@@ -284,7 +284,7 @@ class MainWindowPresenter:
 
         try:
             self.model.saveSample(filename, sample_key)
-        except (OSError, ValueError) as e:
+        except OSError as e:
             self.notifyError(f'An error occurred while exporting the sample ({sample_key}) to {filename}.', e)
 
     def addPrimitive(self, primitive, args):
@@ -328,7 +328,7 @@ class MainWindowPresenter:
         self.view.undo_stack.push(delete_command)
 
     def mergeSample(self, sample_keys):
-        """Adds command to delete sample(s) into the view's undo stack
+        """Adds command to merge sample(s) into the view's undo stack
 
         :param sample_keys: key(s) of sample(s)
         :type sample_keys: List[str]
@@ -381,7 +381,7 @@ class MainWindowPresenter:
 
         try:
             self.model.savePoints(filename, point_type)
-        except (OSError, ValueError) as e:
+        except OSError as e:
             self.notifyError(f'An error occurred while exporting the {point_type.value} points to {filename}.', e)
 
     def addPoints(self, points, point_type, show_manager=True):
@@ -468,6 +468,12 @@ class MainWindowPresenter:
         :param alignment: index of alignment
         :type alignment: int
         """
+
+        vectors = self.model.measurement_vectors[indices, slice(detector * 3, detector * 3 + 3), alignment]
+
+        if (np.linalg.norm(vectors, axis=1) < VECTOR_EPS).all():
+            return
+
         remove_command = RemoveVectors(indices, detector, alignment, self)
         self.view.undo_stack.push(remove_command)
 
@@ -521,7 +527,7 @@ class MainWindowPresenter:
 
         try:
             self.model.saveVectors(filename)
-        except (OSError, ValueError) as e:
+        except OSError as e:
             self.notifyError(f'An error occurred while exporting the measurement vector to {filename}.', e)
 
     def importTransformMatrix(self):
@@ -539,15 +545,19 @@ class MainWindowPresenter:
         try:
             matrix = read_trans_matrix(filename)
             if not check_rotation(matrix):
-                self.view.showMessage(f'The imported matrix is an invalid rotation - {filename}.',
+                self.view.showMessage('The imported matrix is an invalid rotation. The rotation vectors should '
+                                      f'have a magnitude of 1 (accurate to 7 decimal digits) - {filename}.',
                                       MessageSeverity.Critical)
                 return None
             return matrix
         except (OSError, ValueError) as e:
-            msg = 'An error occurred while reading the .trans file ({}).\nPlease check that ' \
-                  'the file has the correct format.\n'
+            if isinstance(e, ValueError):
+                msg = f'Alignment matrix could not be read from {filename} because it has incorrect data: {e}'
+            else:
+                msg = 'An error occurred while opening this file.\nPlease check that ' \
+                      f'the file exist and also that this user has access privileges for this file.\n({filename})'
 
-            self.notifyError(msg.format(filename), e)
+            self.notifyError(msg, e)
 
         return None
 
@@ -565,7 +575,7 @@ class MainWindowPresenter:
 
         try:
             np.savetxt(filename, self.model.alignment, delimiter='\t', fmt='%.7f')
-        except (OSError, ValueError) as e:
+        except OSError as e:
             self.notifyError(f'An error occurred while exporting the alignment matrix to {filename}.', e)
 
     def changeCollimators(self, detector_name, collimator_name):
@@ -731,10 +741,13 @@ class MainWindowPresenter:
         try:
             index, points, poses = read_fpos(filename)
         except (OSError, ValueError) as e:
-            msg = 'An error occurred while reading the .fpos file ({}).\nPlease check that ' \
-                  'the file has the correct format.\n'
+            if isinstance(e, ValueError):
+                msg = f'Fpos data could not be read from {filename} because it has incorrect data: {e}'
+            else:
+                msg = 'An error occurred while opening this file.\nPlease check that ' \
+                      f'the file exist and also that this user has access privileges for this file.\n({filename})'
 
-            self.notifyError(msg.format(filename), e)
+            self.notifyError(msg, e)
             return
 
         if index.size < 3:
@@ -752,8 +765,8 @@ class MainWindowPresenter:
         positioner = self.model.instrument.positioning_stack
         link_count = len(positioner.links)
         if poses.size != 0 and poses.shape[1] != link_count:
-            self.view.showMessage(f'Incorrect number of joint offsets in fpos file, '
-                                  f'got {poses.shape[1]} but expected {link_count}')
+            self.view.showMessage(f'Incorrect number of joint offsets in fpos file, received {poses.shape[1]} '
+                                  f'but expected {link_count}')
             return
         q = positioner.set_points
         end_q = q
@@ -762,9 +775,8 @@ class MainWindowPresenter:
                 pose = positioner.fromUserFormat(pose)
                 end_q = pose
                 matrix = (positioner.fkine(pose, ignore_locks=True) @ positioner.tool_link).inverse()
-                _matrix = matrix[0:3, 0:3].transpose()
                 offset = matrix[0:3, 3].transpose()
-                points[i, :] = points[i, :] @ _matrix + offset
+                points[i, :] = points[i, :] @ matrix[0:3, 0:3].transpose() + offset
 
             positioner.fkine(q, ignore_locks=True)
 
@@ -811,6 +823,14 @@ class MainWindowPresenter:
             self.view.showMessage('No measurement points are enabled. Enable points from the point manager to proceed.',
                                   MessageSeverity.Information)
             return
+
+        if settings.value(settings.Key.Skip_Zero_Vectors):
+            vectors = self.model.measurement_vectors[self.model.measurement_points.enabled, :, :]
+            if (np.linalg.norm(vectors, axis=1) < VECTOR_EPS).all():
+                self.view.showMessage('No measurement vectors have been added and the software is configured to '
+                                      '"Skip the measurement" when the measurement vector is unset. Change '
+                                      'the behaviour in Preferences to proceed.', MessageSeverity.Information)
+                return
 
         self.view.docks.showSimulationResults()
         if self.model.simulation is not None and self.model.simulation.isRunning():

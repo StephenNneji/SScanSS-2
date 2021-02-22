@@ -2,10 +2,9 @@
 Classes for Quaternion and Quaternion-Vector objects
 """
 import math
+from .constants import VECTOR_EPS
 from .vector import Vector3, Vector4
 from .matrix import Matrix33, Matrix44
-
-eps = 1e-5
 
 
 class Quaternion:
@@ -13,11 +12,11 @@ class Quaternion:
 
     :param w: real part
     :type w: float
-    :param x: imaginary part i
+    :param x: coefficient of imaginary part i
     :type x: float
-    :param y: imaginary part j
+    :param y: coefficient of imaginary part j
     :type y: float
-    :param z: imaginary part k
+    :param z: coefficient of imaginary part k
     :type z: float
     """
     def __init__(self, w=0.0, x=0.0, y=0.0, z=0.0):
@@ -28,10 +27,20 @@ class Quaternion:
 
     @classmethod
     def identity(cls):
-        return Quaternion(1.0, 0.0, 0.0, 0.0)
+        """Creates unit quaternion
+
+        :return: unit quaternion
+        :rtype: Quaternion
+        """
+        return cls(1.0, 0.0, 0.0, 0.0)
 
     @property
     def x(self):
+        """Gets and sets the coefficient of imaginary part i of the quaternion
+
+        :return: coefficient of imaginary part i
+        :rtype: float
+        """
         return self._data.x
 
     @x.setter
@@ -40,6 +49,11 @@ class Quaternion:
 
     @property
     def y(self):
+        """Gets and sets the coefficient of imaginary part j of the quaternion
+
+        :return: coefficient of imaginary part j
+        :rtype: float
+        """
         return self._data.y
 
     @y.setter
@@ -48,6 +62,11 @@ class Quaternion:
 
     @property
     def z(self):
+        """Gets and sets the coefficient of imaginary part k of the quaternion
+
+        :return: coefficient of imaginary part k
+        :rtype: float
+        """
         return self._data.z
 
     @z.setter
@@ -56,6 +75,11 @@ class Quaternion:
 
     @property
     def w(self):
+        """Gets and sets the real part of the quaternion
+
+        :return: real part
+        :rtype: float
+        """
         return self._data.w
 
     @w.setter
@@ -64,6 +88,10 @@ class Quaternion:
 
     @property
     def axis(self):
+        """Gets and sets the coefficients of imaginary part [i, j, k] of the quaternion
+
+        :rtype axis: Vector3
+        """
         return Vector3([self.x, self.y, self.z])
 
     @axis.setter
@@ -71,13 +99,28 @@ class Quaternion:
         self._data.xyz = axis
 
     def conjugate(self):
-        return Quaternion(self.w, -self.x, -self.y, -self.z)
+        """Computes quaternion conjugate
+
+        :return: conjugate of quaternion
+        :rtype: Quaternion
+        """
+        return self.__class__(self.w, -self.x, -self.y, -self.z)
 
     @property
     def length(self):
+        """Computes length/magnitude of quaternion
+
+        :return: length of quaternion
+        :rtype: float
+        """
         return self._data.length
 
     def toMatrix(self):
+        """Converts quaternion into a rotation matrix
+
+        :return: rotation matrix
+        :rtype: Matrix33
+        """
         twoxx = 2 * self.x * self.x
         twoyy = 2 * self.y * self.y
         twozz = 2 * self.z * self.z
@@ -96,9 +139,14 @@ class Quaternion:
                          [twoxz - twowy, twoyz + twowx, 1 - twoxx - twoyy]])
 
     def toAxisAngle(self):
+        """Converts quaternion into the angle axis representation
+
+        :return: rotation axis and angle in radians
+        :rtype: Union[Vector3, float]
+        """
         angle = 2 * math.acos(self.w)
         s = math.sqrt(1 - self.w * self.w)
-        if angle < eps:
+        if angle < VECTOR_EPS:
             axis = Vector3()
         else:
             axis = Vector3([self.x, self.y, self.z]) / s
@@ -106,21 +154,45 @@ class Quaternion:
         return axis, angle
 
     def inverse(self):
+        """Computes inverse of the quaternion
+
+        :return: inverse of quaternion
+        :rtype: Quaternion
+        """
         return self.conjugate().normalize()
 
     def normalize(self):
-        length = self.length
-        if length > eps:
-            n = self._data.normalized
-            return Quaternion(n.w, n.x, n.y, n.z)
+        """Normalize quaternion
 
-        return Quaternion()
+        :return: normalized quaternion
+        :rtype: Quaternion
+        """
+        length = self.length
+        if length > VECTOR_EPS:
+            n = self._data.normalized
+            return self.__class__(n.w, n.x, n.y, n.z)
+
+        return self.__class__()
 
     def dot(self, q):
+        """Computes quaternion dot product with another quaternion
+
+        :param q: quaternion
+        :type q: Quaternion
+        :return: dot product
+        :rtype: float
+        """
         return self._data.dot(q[:])
 
     def rotate(self, point):
-        p = Quaternion(x=point[0], y=point[1], z=point[2])
+        """Rotate a 3D point with the quaternion
+
+        :param point: 3D point
+        :type point: Vector3
+        :return: rotated point
+        :rtype: Vector3
+        """
+        p = self.__class__(x=point[0], y=point[1], z=point[2])
         q_inv = self.inverse()
 
         rotated = self * p * q_inv
@@ -135,17 +207,30 @@ class Quaternion:
 
     @classmethod
     def fromAxisAngle(cls, axis, angle):
-        # angle is in radians
-        # axis should be a vector3
+        """Converts angle axis representation to quaternion
 
+        :param axis: axis of rotation
+        :type axis: Vector3
+        :param angle: angle of rotation in radians
+        :type angle: float
+        :return: quaternion
+        :rtype: Quaternion
+        """
         w = math.cos(angle / 2)
         x, y, z = axis.normalized * math.sin(angle / 2)
 
-        return Quaternion(w, x, y, z)
+        return cls(w, x, y, z)
 
     @classmethod
     def fromMatrix(cls, matrix):
-        if matrix.m33 < eps:
+        """Converts rotation matrix to quaternion
+
+        :param matrix: rotation matrix
+        :type matrix: Matrix33
+        :return: quaternion
+        :rtype: Quaternion
+        """
+        if matrix.m33 < VECTOR_EPS:
             if matrix.m11 > matrix.m22:
                 t = 1 + matrix.m11 - matrix.m22 - matrix.m33
                 q = [
@@ -181,7 +266,7 @@ class Quaternion:
                 ]
 
         q = Vector4(q) * 0.5 / math.sqrt(t)
-        return Quaternion(*q)
+        return cls(*q)
 
     def __str__(self):
         return "[{} <{} {} {}>]".format(self.w, *self.axis)
@@ -196,7 +281,7 @@ class Quaternion:
         w = w1 * w2 - (v1 | v2)
         v = w1 * v2 + w2 * v1 + (v1 ^ v2)
 
-        return Quaternion(w, *v)
+        return self.__class__(w, *v)
 
     def __or__(self, other):
         return self.dot(other)
@@ -216,13 +301,13 @@ class QuaternionVectorPair:
         self.vector = v
 
     def __mul__(self, other):
-        if not isinstance(other, QuaternionVectorPair):
+        if not isinstance(other, self.__class__):
             raise ValueError('cannot multiply {} with QuaternionVectorPair'.format(type(other)))
 
         q = self.quaternion * other.quaternion
         v = self.quaternion.rotate(other.vector) + self.vector
 
-        return QuaternionVectorPair(q, v)
+        return self.__class__(q, v)
 
     def __imul__(self, other):
         temp = self.__mul__(other)
@@ -231,12 +316,22 @@ class QuaternionVectorPair:
         return self
 
     def inverse(self):
+        """Computes inverse of Quaternion-Vector pair
+
+        :return: inverse of Quaternion-Vector pair
+        :rtype: QuaternionVectorPair
+        """
         q = self.quaternion.inverse()
         v = -q.rotate(self.vector)
 
-        return QuaternionVectorPair(q, v)
+        return self.__class__(q, v)
 
     def toMatrix(self):
+        """Converts Quaternion-Vector pair to homogeneous transformation matrix
+
+        :return: homogeneous transformation matrix
+        :rtype: matrix44
+        """
         m = Matrix44.identity()
         m[0:3, 0:3] = self.quaternion.toMatrix()
         m[0:3, 3] = self.vector
@@ -245,6 +340,13 @@ class QuaternionVectorPair:
 
     @classmethod
     def fromMatrix(cls, matrix):
+        """Creates Quaternion-Vector pair from homogeneous transformation matrix
+
+        :param matrix: homogeneous transformation matrix
+        :type matrix: Matrix44
+        :return: Quaternion-Vector pair
+        :rtype: QuaternionVectorPair
+        """
         q = Quaternion.fromMatrix(matrix)
         v = Vector3(matrix[0:3, 3])
 
@@ -252,6 +354,11 @@ class QuaternionVectorPair:
 
     @classmethod
     def identity(cls):
+        """Creates unit Quaternion-Vector pair which consist of a unit quaternion and a zero vector
+
+        :return: unit Quaternion-Vector pair
+        :rtype: QuaternionVectorPair
+        """
         q = Quaternion.identity()
         v = Vector3()
 

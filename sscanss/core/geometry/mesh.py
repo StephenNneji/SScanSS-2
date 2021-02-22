@@ -3,10 +3,8 @@ Classes for Mesh and Bounding-Box objects
 """
 import numpy as np
 from .colour import Colour
+from ..math.constants import VECTOR_EPS
 from ..math.vector import Vector3
-
-
-eps = 1e-5
 
 
 def compute_face_normals(vertices, remove_degenerate=False):
@@ -31,12 +29,12 @@ def compute_face_normals(vertices, remove_degenerate=False):
     row_sums = np.linalg.norm(normals, axis=1)
 
     if remove_degenerate:
-        good_index = row_sums >= eps
+        good_index = row_sums >= VECTOR_EPS
         face_vertices = face_vertices[good_index, :]
         normals = normals[good_index, :] / row_sums[good_index, np.newaxis]
         return (face_vertices.reshape(-1, 3), np.repeat(normals, 3, axis=0)) if reshape else (face_vertices, normals)
 
-    row_sums[row_sums < eps] = 1
+    row_sums[row_sums < VECTOR_EPS] = 1
     normals = normals / row_sums[:, np.newaxis]
 
     return np.repeat(normals, 3, axis=0) if reshape else normals
@@ -85,7 +83,7 @@ class Mesh:
         self.bounding_box = BoundingBox.fromPoints(self.vertices)
 
     def append(self, mesh):
-        """Append a given mesh to this mesh. Indices are offset to ensure the correct
+        """Appends a given mesh to this mesh. Indices are offset to ensure the correct
         vertices and normals are used
 
         :param mesh: mesh to append
@@ -97,7 +95,7 @@ class Mesh:
         self.normals = np.vstack((self.normals, mesh.normals))
 
     def remove(self, index):
-        """Split this mesh into two parts using the given index. This operation can be used as an inverse
+        """Splits this mesh into two parts using the given index. This operation can be used as an inverse
         of Mesh.append() but the split is not guaranteed to be a valid mesh if vertices have been rearranged.
         The first split is retained while the second is returned by the function.
 

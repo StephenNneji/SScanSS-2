@@ -1,19 +1,26 @@
 ##############
 User Interface
 ##############
-After starting SScanSS-2, the new project dialog will be opened because SScanSS-2 cannot be used without specifying an
+After starting SScanSS 2, the new project dialog will be opened because SScanSS 2 cannot be used without specifying an
 instrument. To close the new project dialog without creating a new project, press the **Esc** key. When no project
 exists, several actions will be disabled.
 
+The main user interface shown below consist of a title bar, a menu bar, a standard toolbar, a status bar, and a graphic
+window where 3D object will be displayed. The title bar displays the name of the project once it has been saved to disk.
+The status bar displays messages about the state of the application and tips when hovering over a menu items and the
+name of the instrument selected in the project.
+
+
 .. image:: images/start.png
    :scale: 50
-   :alt: New Project Dialog
+   :alt: New project dialog
    :align: center
 
 ******************
 Create new project
 ******************
-The new project dialog can be opened using the shortcut **Ctrl + N** or by clicking  **File > New Project**.
+The new project dialog can be opened using the shortcut **Ctrl + N** or by clicking  **File > New Project** in the
+main menu.
 
 .. tip:: You can also click the |new| icon on the toolbar.
 
@@ -34,7 +41,7 @@ description.
 
 To open an existing project:
 
-1. Press **Ctrl + O** or click **File > Open Project**.
+1. Press **Ctrl + O** or click **File > Open Project** in the main menu.
 
 .. tip:: You can also click the |open| icon on the toolbar.
 
@@ -50,7 +57,7 @@ can also be opened from the new project dialog.
 
 .. image:: images/open_existing.png
    :scale: 80
-   :alt: Open Existing Project
+   :alt: Open existing project
    :align: center
 
 ************
@@ -78,14 +85,14 @@ The Preferences contains settings to customize SScanSS 2. The preference dialog 
 The preferences dialog divides the setting into 3 sections: General, Graphics and Simulation.
 
 * The general section allows a custom path for extra instrument to be set.
-* The graphics section allows the colour and sizes of most rendered object can be changed, all the graphics settings
+* The graphics section allows the colour and sizes of most rendered object to be changed, all the graphics settings
   are self-explanatory.
 * The simulation section allows the changes to simulation accuracy, order etc. each setting is explained
   :ref:`here <advanced options>`.
 
 .. image:: images/preferences.png
    :scale: 80
-   :alt: Preference Dialog
+   :alt: Preference dialog
    :align: center
 
 Settings can be global or project specific. For the latter, clicking **Accept** will save the changes to the project
@@ -99,7 +106,7 @@ Clicking **Cancel** will close the dialog without saving any changes.
 *************
 Undo and Redo
 *************
-SScanSS-2 is designed so that most operations that affects the project data can be undone. You can undo and redo
+SScanSS 2 is designed so that most operations that affects the project data can be undone. You can undo and redo
 an action using the shortcut **Ctrl + Z** and **Ctrl + Y** respectively. The undo history can be viewed by
 clicking **Edit > Undo History**.
 
@@ -111,9 +118,8 @@ The following operations cannot be undone:
 * Visualization actions (e.g. changing the camera view),
 * Preference changes,
 * Running a Simulation,
+* Exporting data,
 * Switching to a different instrument.
-
-
 
 .. |undo| image:: images/undo.png
             :scale: 10
@@ -123,15 +129,12 @@ The following operations cannot be undone:
 
 .. |save| image:: images/save.png
             :scale: 10
-            :alt: Save
 
 .. |open| image:: images/folder-open.png
             :scale: 10
-            :alt: Open
 
 .. |new| image:: images/file.png
             :scale: 10
-            :alt: New Project
 
 .. |hdf| raw:: html
 

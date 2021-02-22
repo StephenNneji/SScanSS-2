@@ -1,7 +1,7 @@
 ##########
 File Types
 ##########
-The various file types used by SScanSS-2 are described below.
+The various file types used by SScanSS 2 are described below.
 
 .. _fiducial file:
 
@@ -54,18 +54,18 @@ detector instrument at 4 measurement points.::
     1.0000000 0.0000000 0.0000000 -0.0000000 -0.0000000 -1.0000000
     1.0000000 0.0000000 0.0000000 -0.0000000 -0.0000000 -1.0000000
 
-.. note::
-    Append more vectors to the end of the file to add secondary vector alignments. When the number of measurement
-    vectors are greater than the number of measurement points, the extra vectors will be considered as secondary
-    vector alignments.
+Append more vectors to the end of the file to add secondary vector alignments. When the number of measurement vectors
+are greater than the number of measurement points, the extra vectors will be considered as secondary vector alignments.
+Measurement vectors must be zero vectors or have a magnitude of 1 accurate to 7 decimal digits to be valid.
 
 .. _trans file:
 
 ******************************
 Transformation matrix (.trans)
 ******************************
-The *.trans* file is a simple comma or space delimited text file containing a 4 X 4 matrix. The transformation matrix should
-contain a translation and rotation only to be considered valid. An example file is shown below::
+The *.trans* file is a simple comma or space delimited text file containing a 4 X 4 matrix. The transformation matrix
+should contain a translation and rotation only to be considered valid (The rotation vectors should have a magnitude of
+1 accurate to 7 decimal digits). An example file is shown below::
 
     1.0000000   0.0000000   0.0000000   0.0000000
     0.0000000   1.0000000   0.0000000   0.0000000

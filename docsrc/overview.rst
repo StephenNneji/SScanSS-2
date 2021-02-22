@@ -1,14 +1,14 @@
 ################
 General Overview
 ################
-SScanSS-2 can be installed by the downloading the appropriate installer for your operating system and following the
+SScanSS 2 can be installed by the downloading the appropriate installer for your operating system and following the
 instructions in the installation wizard or associated readme files. This section provides information on starting,
-closing and updating SScanSS-2
+closing and updating SScanSS 2
 
 ******************
-Starting SScanSS-2
+Starting SScanSS 2
 ******************
-SScanSS-2 can be opened via shortcuts or from the command line in both the Windows and Linux operating system.
+SScanSS 2 can be opened via shortcuts or from the command line in both the Windows and Linux operating system.
 
 .. note::
    It is possible to open multiple instances of the software at once so avoid unnecessary clicks on
@@ -16,29 +16,29 @@ SScanSS-2 can be opened via shortcuts or from the command line in both the Windo
 
 Windows
 =======
-SScanSS-2 can be run by navigating to the **bin** folder in the installation directory and double clicking on
+SScanSS 2 can be run by navigating to the **bin** folder in the installation directory and double clicking on
 **sscanss.exe**.
 
-To open SScanSS-2 from the start menu, do the following:
+To open SScanSS 2 from the start menu, do the following:
 
 1. Press the Start button.
-2. Search for or Scroll down to SScanSS-2.
-3. Click SScanSS-2.
+2. Search for or Scroll down to SScanSS 2.
+3. Click SScanSS 2.
 
 Linux
 =====
-SScanSS-2 can be run by navigating to the **bin** folder in the installation directory and right click on the
+SScanSS 2 can be run by navigating to the **bin** folder in the installation directory and right click on the
 **sscanss** executable and select **run** from the context menu.
 
-To run SScanSS-2 from the terminal, do the following:
+To run SScanSS 2 from the terminal, do the following:
 
 1. Open the Terminal
 2. Type sscanss2 and press enter.
 
 *****************
-Exiting SScanSS-2
+Exiting SScanSS 2
 *****************
-SScanSS-2 can be closed by clicking the "File > Exit" on the main menu in the software. If the current SScanSS-2 Project
+SScanSS 2 can be closed by clicking the "File > Exit" on the main menu in the software. If the current SScanSS 2 Project
 has been modified, a message pops up to prompt saving the Project. Press the **Save** button to specify saving the
 Project, the **Discard** button to specify not saving the Project, or Cancel to abort the operation and return to the
 software.
@@ -46,9 +46,9 @@ software.
 .. tip:: You can also use **ALT + F4** shortcut to close the software on windows and most Linux variants.
 
 ******************
-Updating SScanSS-2
+Updating SScanSS 2
 ******************
-SScanSS-2 automatically checks for update when the software is opened. To change this behaviour, do the following:
+SScanSS 2 automatically checks for update when the software is opened. To change this behaviour, do the following:
 
 1. Click **Help > Check for Update** in the menu, to update dialog.
 2. In the dialog, uncheck the **Check for updates on startup** checkbox.

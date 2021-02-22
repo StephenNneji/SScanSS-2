@@ -1,13 +1,20 @@
 from enum import Enum, unique
 from PyQt5 import QtCore, QtWidgets
 from sscanss.config import path_for
-from sscanss.core.geometry import BoundingBox, segment_triangle_intersection
+from sscanss.core.geometry import BoundingBox, point_selection
 from sscanss.core.math import is_close, Matrix44, Plane, rotation_btw_vectors, Vector3
 from sscanss.core.util import TransformType, DockFlag, PlaneOptions
 from sscanss.ui.widgets import FormControl, FormGroup, create_tool_button, Banner
 
 
 class TransformDialog(QtWidgets.QWidget):
+    """Provides a container widget for sample transformation tools
+
+    :param transform_type: transform type
+    :type transform_type: TransformType
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     dock_flag = DockFlag.Upper
 
     def __init__(self, transform_type, parent):
@@ -104,6 +111,13 @@ class TransformDialog(QtWidgets.QWidget):
 
 
 class RotateTool(QtWidgets.QWidget):
+    """Provides UI for applying simple rotation around the 3 principal axes
+
+    :param sample: name of sample
+    :type sample: str
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     def __init__(self, sample, parent):
         super().__init__()
 
@@ -161,6 +175,13 @@ class RotateTool(QtWidgets.QWidget):
 
 
 class TranslateTool(QtWidgets.QWidget):
+    """Provides UI for applying simple translation along the 3 principal axes
+
+    :param sample: name of sample
+    :type sample: str
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     def __init__(self, sample, parent):
         super().__init__()
 
@@ -215,6 +236,13 @@ class TranslateTool(QtWidgets.QWidget):
 
 
 class CustomTransformTool(QtWidgets.QWidget):
+    """Provides UI for applying rigid transformation with arbitrary homogeneous matrix
+
+    :param sample: name of sample
+    :type sample: str
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     def __init__(self, sample, parent):
         super().__init__()
 
@@ -289,6 +317,13 @@ class CustomTransformTool(QtWidgets.QWidget):
 
 
 class MoveOriginTool(QtWidgets.QWidget):
+    """Provides UI to translate origin of the coordinate system to the sample bounds
+
+    :param sample: name of sample
+    :type sample: str
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     @unique
     class MoveOptions(Enum):
         Center = 'Bound Center'
@@ -399,6 +434,13 @@ class MoveOriginTool(QtWidgets.QWidget):
 
 
 class PlaneAlignmentTool(QtWidgets.QWidget):
+    """Provides UI to align a plane of the coordinate system to a selected plane
+
+    :param sample: name of sample
+    :type sample: str
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     def __init__(self, sample, parent):
         super().__init__()
 
@@ -565,24 +607,19 @@ class PlaneAlignmentTool(QtWidgets.QWidget):
         self.parent.gl_widget.update()
 
     def addPicks(self, start, end):
-        direction = end - start
-        length = direction.length
-        if length < 1e-5 or self.vertices is None:
-            return
-        direction /= length
-
-        distances = segment_triangle_intersection(start, direction, length, self.vertices)
-        if not distances:
+        points = point_selection(start, end, self.vertices)
+        if points.size == 0:
             return
 
-        point = start + direction * distances[0]
+        point = points[0]
+
         last_index = self.table_widget.rowCount()
         self.table_widget.insertRow(last_index)
         for i in range(3):
             item = QtWidgets.QTableWidgetItem(f'{point[i]:.3f}')
             item.setTextAlignment(QtCore.Qt.AlignCenter)
             self.table_widget.setItem(last_index, i, item)
-        self.parent.gl_widget.picks.append([point, False])
+        self.parent.gl_widget.picks.append([list(point), False])
         self.updateInitialPlane()
 
     def removePicks(self):

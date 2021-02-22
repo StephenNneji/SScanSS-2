@@ -1,13 +1,13 @@
 ################
 Scene Management
 ################
-The graphics window is the main window in SScanSS-2 and is essential for visualizing many operations. The graphics window will
+The graphics window is the main window in SScanSS 2 and is essential for visualizing many operations. The graphics window will
 render one of two scenes: the first showing the sample preparation "*Sample Scene*" and the second the instrument "*Instrument Scene*".
 
 ************
 Toggle scene
 ************
-SScanSS-2 will switch to the most appropriate scene for the current operation. To switch between scenes manually use the
+SScanSS 2 will switch to the most appropriate scene for the current operation. To switch between scenes manually use the
 shortcut **Ctrl + T** or click the |toggle| button in the toolbar
 
 **********
@@ -50,11 +50,25 @@ to the following:
     active shading style irrespective of the scene or the operation.
 
 *******************
+Sample bounding box
+*******************
+The sample bounding box can be hidden or shown by clicking the **Toggle Bounding Box** in the **View** menu or
+the |box| toolbar button. The sample bounding box will be rendered with a dotted red line in the 3D scene. The bounding
+box is a cuboid whose faces are each perpendicular to one of the axis of the coordinate system. The sample bounding box
+can be used to visualize how the sample relates to the coordinate system when the coordinate system is off-screen. This
+action is global so showing the sample bounding box in the sample scene will render it in the instrument scene.
+
+.. image:: images/scene_bounding.png
+   :scale: 80
+   :alt: Scene with bounding box
+   :align: center
+
+*******************
 Hide and show items
 *******************
 The 3D models representing the fiducials, measurements, vectors and the coordinate frame can be hidden or shown by
 clicking the appropriate toggle in the **View** menu or the |eye| toolbar menu. This could useful when the scene is
-cluttered by too many items. This action is also global so hiding fiducials in the sample scene will hide them in
+cluttered by too many items. This action is global so hiding fiducials in the sample scene will hide them in
 the instrument scene.
 
 
@@ -62,6 +76,9 @@ the instrument scene.
             :scale: 10
 
 .. |eye| image:: images/eye-slash.png
+            :scale: 10
+
+.. |box| image:: images/boundingbox.png
             :scale: 10
 
 .. |camera| image:: images/camera.png

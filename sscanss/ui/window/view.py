@@ -1,4 +1,5 @@
 import os
+import webbrowser
 from PyQt5 import QtCore, QtGui, QtWidgets
 from .presenter import MainWindowPresenter, MessageReplyType
 from .dock_manager import DockManager
@@ -21,10 +22,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.recent_projects = []
         self.presenter = MainWindowPresenter(self)
+        window_icon = QtGui.QIcon(":/images/logo.ico")
 
         self.undo_stack = QtWidgets.QUndoStack(self)
         self.undo_view = QtWidgets.QUndoView(self.undo_stack)
-        self.undo_view.setWindowTitle('History')
+        self.undo_view.setWindowTitle('Undo History')
+        self.undo_view.setWindowIcon(window_icon)
         self.undo_view.setAttribute(QtCore.Qt.WA_QuitOnClose, False)
 
         self.gl_widget = GLWidget(self)
@@ -44,7 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createStatusBar()
 
         self.setWindowTitle(MAIN_WINDOW_TITLE)
-        self.setWindowIcon(QtGui.QIcon(path_for('logo.png')))
+        self.setWindowIcon(window_icon)
         self.setMinimumSize(1024, 900)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
@@ -116,7 +119,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.undo_view_action = QtWidgets.QAction('Undo &History', self)
         self.undo_view_action.setStatusTip('View undo history')
-        self.undo_view_action.triggered.connect(self.showUndoHistory)
+        self.undo_view_action.triggered.connect(self.undo_view.show)
 
         self.preferences_action = QtWidgets.QAction('Preferences', self)
         self.preferences_action.setStatusTip('Change application preferences')
@@ -167,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show_fiducials_action.setIcon(QtGui.QIcon(path_for('hide_fiducials.png')))
         self.show_fiducials_action.setCheckable(True)
         self.show_fiducials_action.setChecked(True)
-        action = self.scenes.toggleVisibility
+        action = self.scenes.changeVisibility
         self.show_fiducials_action.toggled.connect(lambda state, a=Attributes.Fiducials: action(a, state))
 
         self.show_measurement_action = QtWidgets.QAction('Toggle Measurement Points', self)
@@ -568,7 +571,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cursor_label.setAlignment(QtCore.Qt.AlignCenter)
         sb.addPermanentWidget(self.cursor_label)
 
-
     def readSettings(self):
         """Loads window geometry from INI file """
         self.restoreGeometry(settings.value(settings.Key.Geometry))
@@ -670,24 +672,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return change_collimator_action
 
-    def showUndoHistory(self):
-        """shows Undo History"""
-        self.undo_view = QtWidgets.QUndoView(self.undo_stack)
-        self.undo_view.setWindowTitle('Undo History')
-        self.undo_view.show()
-        self.undo_view.setAttribute(QtCore.Qt.WA_QuitOnClose, False)
-
     def showNewProjectDialog(self):
         if self.presenter.confirmSave():
-            self.project_dialog = ProjectDialog(self.recent_projects, parent=self)
-            self.project_dialog.setModal(True)
-            self.project_dialog.show()
+            project_dialog = ProjectDialog(self.recent_projects, parent=self)
+            project_dialog.setModal(True)
+            project_dialog.show()
 
     def showPreferences(self, group=None):
-        self.preferences = Preferences(self)
-        self.preferences.setActiveGroup(group)
-        self.preferences.setModal(True)
-        self.preferences.show()
+        preferences = Preferences(self)
+        preferences.setActiveGroup(group)
+        preferences.setModal(True)
+        preferences.show()
 
     def showAlignmentError(self):
         self.alignment_error = AlignmentErrorDialog(parent=self)
@@ -705,9 +700,9 @@ class MainWindow(QtWidgets.QMainWindow):
                              MessageSeverity.Information)
             return
 
-        self.path_length_plotter = PathLengthPlotter(self)
-        self.path_length_plotter.setModal(True)
-        self.path_length_plotter.show()
+        path_length_plotter = PathLengthPlotter(self)
+        path_length_plotter.setModal(True)
+        path_length_plotter.show()
 
     def showSampleExport(self, sample_list):
         sample_export = SampleExportDialog(sample_list, parent=self)
@@ -727,8 +722,8 @@ class MainWindow(QtWidgets.QMainWindow):
                              MessageSeverity.Information)
             return
 
-        if not simulation.results:
-            self.showMessage('There are no simulation results to write in script.', MessageSeverity.Information)
+        if not simulation.has_valid_result:
+            self.showMessage('There are no valid simulation results to write in script.', MessageSeverity.Information)
             return
 
         script_export = ScriptExportDialog(simulation, parent=self)
@@ -809,8 +804,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return choices[index]
 
     def openProject(self, filename=''):
-        """
-        This function loads a project with the given filename. if filename is empty,
+        """This function loads a project with the given filename. if filename is empty,
         a file dialog will be opened.
 
         :param filename: full path of file
@@ -829,10 +823,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                  self.presenter.projectOpenError)
 
     def showDocumentation(self):
-        """
-        This function opens the documentation html in the system's default browser
-        """
-        import webbrowser
+        """Opens the documentation in the system's default browser"""
         webbrowser.open_new(DOCS_URL)
 
     def showUpdateMessage(self, message):
@@ -873,7 +864,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 class Updater:
+    """Handles checking for software updates
 
+    :param parent: Main window
+    :type parent: MainWindow
+    """
     def __init__(self, parent):
         self.startup = False
         self.parent = parent

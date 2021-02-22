@@ -7,7 +7,7 @@ from PyQt5 .QtCore import pyqtSignal, QObject
 from sscanss.config import settings, INSTRUMENTS_PATH
 from sscanss.core.instrument import read_instrument_description_file, Sequence, Simulation
 from sscanss.core.io import (write_project_hdf, read_project_hdf, read_3d_model, read_points, read_vectors,
-                             write_binary_stl, write_points)
+                             write_binary_stl, write_points, validate_vector_length)
 from sscanss.core.scene import validate_instrument_scene_size
 from sscanss.core.util import PointType, LoadVector, Attributes, POINT_DTYPE
 
@@ -16,6 +16,9 @@ IDF = namedtuple('IDF', ['name', 'path', 'version'])
 
 
 class MainWindowModel(QObject):
+    """
+    Model manages project data and communicates to view via signals
+    """
     sample_scene_updated = pyqtSignal(object)
     instrument_scene_updated = pyqtSignal()
     simulation_created = pyqtSignal()
@@ -27,9 +30,6 @@ class MainWindowModel(QObject):
     instrument_controlled = pyqtSignal(int)
 
     def __init__(self):
-        """
-        Model manages project data and communicates to view via signals
-        """
         super().__init__()
 
         self.project_data = None
@@ -255,13 +255,17 @@ class MainWindowModel(QObject):
         detector_count = len(self.instrument.detectors)
         width = 3 * detector_count
         if temp.shape[1] > width:
-            raise ValueError(f'{filename} contains vectors for more than {detector_count} detectors.')
+            raise ValueError(f'The file contains vectors for more than {detector_count} detectors.')
 
         num_of_points = self.measurement_points.size
         num_of_vectors = temp.shape[0]
 
         vectors = np.zeros((num_of_vectors, width), dtype=np.float32)
         vectors[:, 0:temp.shape[1]] = temp
+
+        if not validate_vector_length(vectors):
+            raise ValueError('Measurement vectors must be zero vectors or have a magnitude of 1 '
+                             '(accurate to 7 decimal digits), the file contains vectors that are neither.')
 
         offset = (num_of_points - num_of_vectors) % num_of_points
         if offset != 0:
@@ -563,5 +567,3 @@ class MainWindowModel(QObject):
         self.simulation.check_limits = check_limits
         self.simulation.check_collision = check_collision
         self.simulation_created.emit()
-
-

@@ -2,7 +2,7 @@
 Instrument Editor
 #################
 
-This is a tool for modifying instrument description files for SScanSS-2. The editor simplifies the creation and
+This is a tool for modifying instrument description files for SScanSS 2. The editor simplifies the creation and
 modification of instrument description files by providing real-time validation against the instrument schema and
 giving user friendly error messages to the developer. It will also validate that referenced files (3D model,
 templates etc) exists.
@@ -44,7 +44,7 @@ to save if an attempt is made to close the editor without saving.
 
 Graphic Window
 ==============
-The graphics window is the same as the one used in SScanSS-2 (See :ref:`navigation <Navigation>`). It supports scene
+The graphics window is the same as the one used in SScanSS 2 (See :ref:`navigation <Navigation>`). It supports scene
 rotation with the left mouse button, panning with the right mouse button and zooming with the mouse wheel.
 
 Message Window
