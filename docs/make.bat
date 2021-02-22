@@ -22,18 +22,6 @@ if "%1" == "html" (
     goto end
 )
 
-if "%1" == "deploy" (
-    if "%2" == "" (
-        echo.The deploy DIR must be specified
-        goto end
-    )
-    rmdir /q /s "%2"
-	mkdir "%2"
-    robocopy %BUILDDIR%/html "%2" /E > nul
-    echo.Generated files copied to ..\docs
-    goto end
-)
-
 if "%1" == "" goto help
 
 %SPHINXBUILD% >NUL 2>NUL

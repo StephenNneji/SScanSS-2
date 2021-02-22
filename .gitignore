@@ -15,8 +15,7 @@ htmlcov/
 # Build
 
 _build
-docs/.buildinfo
-docs/*.inv
+docs/_web
 installer/bundle/
 installer/editor/
 installer/temp/
