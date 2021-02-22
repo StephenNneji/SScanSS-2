@@ -2,7 +2,7 @@ import os
 import shutil
 import sys
 sys.path.insert(0, os.path.abspath('..'))
-from sscanss.config import __version__
+from sscanss.__version import __version__
 
 
 DOCS_PATH = os.path.abspath(os.path.dirname(__file__))

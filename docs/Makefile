@@ -18,16 +18,6 @@ clean:
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(SOURCEDIR) $(BUILDDIR)/html
 
-deploy:
-ifndef DEPLOY_DIR
-	$(error DEPLOY_DIR must be specified)
-endif
-	@rm -rf $(DEPLOY_DIR)
-	@mkdir $(DEPLOY_DIR)
-	@cp -a $(BUILDDIR)/html/. $(DEPLOY_DIR)
-	@echo
-	@echo "Generated files copied to $(DEPLOY_DIR)"
-
 .PHONY: help Makefile
 
 # Catch-all target: route all unknown targets to Sphinx using the new
