@@ -12,4 +12,4 @@ WEB_PATH = os.path.join(DOCS_PATH, '_web', __version__)
 if os.path.isdir(WEB_PATH):
     shutil.rmtree(WEB_PATH, ignore_errors=True)
 
-shutil.copytree(BUILD_PATH, WEB_PATH, ignore=shutil.ignore_patterns('.buildinfo', 'objects.inv'))
+shutil.copytree(BUILD_PATH, WEB_PATH, ignore=shutil.ignore_patterns('.buildinfo', 'objects.inv', 'doctrees'))
