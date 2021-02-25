@@ -5,6 +5,8 @@ on:
     branches: [ master ]
     paths:
     - 'docs/**'
+  release:
+    types: [published]
 
 jobs: 
   build:
@@ -27,6 +29,7 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Build and Deploy Docs
       run: |
+        echo "[A] github.ref: ${{github.ref}}"
         cd docs
         make html
         python deploy.py
