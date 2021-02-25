@@ -5,7 +5,6 @@ sys.path.insert(0, os.path.abspath('..'))
 from sscanss.__version import __version__
 
 ref = 'master'
-print(sys.argv[1], 'end')
 if len(sys.argv) > 1 and sys.argv[1].strip().endswith(__version__):
     ref  = __version__ 
 
