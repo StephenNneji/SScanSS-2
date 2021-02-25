@@ -29,10 +29,9 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Build and Deploy Docs
       run: |
-        echo "[A] github.ref: ${{github.ref}}"
         cd docs
         make html
-        python deploy.py
+        python deploy.py github.ref
         cd _web
         git config user.name github-actions
         git config user.email github-actions@github.com
