@@ -1,7 +1,8 @@
 
 [![license](https://img.shields.io/github/license/ISISNeutronMuon/SScanSS-2.svg)](https://github.com/ISISNeutronMuon/SScanSS-2/blob/master/LICENSE)
 [![release](https://img.shields.io/github/release/ISISNeutronMuon/SScanSS-2.svg)](https://github.com/ISISNeutronMuon/SScanSS-2/releases)
-[![Actions Status](https://github.com/ISISNeutronMuon/SScanSS-2/workflows/Build/badge.svg)](https://github.com/ISISNeutronMuon/SScanSS-2/actions)
+[![Actions Status](https://github.com/StephenNneji/SScanSS-2/workflows/Build/badge.svg)](https://github.com/StephenNneji/SScanSS-2/actions)
+[![Actions Status](https://github.com/StephenNneji/SScanSS-2/workflows/Publish%20Docs/badge.svg)](https://github.com/StephenNneji/SScanSS-2/actions)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4476755.svg)](https://doi.org/10.5281/zenodo.4476755)
 
 This is a test!!!!!!!!!!!
