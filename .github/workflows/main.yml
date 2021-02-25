@@ -29,6 +29,10 @@ jobs:
       run: |
         sudo apt-get install xvfb
         xvfb-run --auto-servernum python build_executable.py
+    - name: Run unit-tests (MacOS)
+      if: runner.os == 'macOS'
+      run: |
+        python build_executable.py    
     - name: Run unit-tests (Windows)
       if: runner.os == 'Windows'
       run: |
