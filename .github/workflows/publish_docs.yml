@@ -31,7 +31,7 @@ jobs:
       run: |
         cd docs
         make html
-        python deploy.py github.ref
+        python deploy.py ${{github.ref}}
         cd _web
         git config user.name github-actions
         git config user.email github-actions@github.com

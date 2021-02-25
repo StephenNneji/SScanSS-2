@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [windows-latest, ubuntu-latest, macos-latest]
+        platform: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -29,10 +29,6 @@ jobs:
       run: |
         sudo apt-get install xvfb
         xvfb-run --auto-servernum python build_executable.py
-    - name: Run unit-tests (MacOS)
-      if: runner.os == 'macOS'
-      run: |
-        python build_executable.py    
     - name: Run unit-tests (Windows)
       if: runner.os == 'Windows'
       run: |
