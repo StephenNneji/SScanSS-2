@@ -88,8 +88,9 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
+          echo -n $API_CONNECT_KEY | base64 -d -o  ./auth_key.p8
           chmod 777 make.sh
-          ./make.sh "$DEV_TEAM_ID"
+          ./make.sh "$GITHUB_REF_NAME" "$DEV_TEAM_ID" "$API_CONNECT_ISSUER" "$API_CONNECT_KEY_ID"
         env:
           CODE_SIGNING_CERTIFICATE_BASE64: ${{ secrets.CODE_SIGNING_CERTIFICATE_BASE64 }}
           CODE_SIGNING_PASSWORD: ${{ secrets.CODE_SIGNING_PASSWORD }}
