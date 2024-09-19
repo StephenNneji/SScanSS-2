@@ -14,8 +14,8 @@ codesign -v --deep --force --options=runtime --entitlements ./entitlements.plist
 codesign -v --deep --force --options=runtime --entitlements ./entitlements.plist --sign ${DEV_TEAM_ID} --timestamp ${SSCANSS_PATH}
 
 # Build Pkg
-pkgbuild --root ${EDITOR_PATH} --identifier com.sscanss2.editor.pkg --version ${VER}--install-location "/Applications/editor.app" editor.pkg
-pkgbuild --root ${SSCANSS_PATH} --identifier "com.sscanss2.sscanss.pkg" --version ${VER} --install-location "/Applications/sscanss.app" sscanss.pkg
+pkgbuild --root ${EDITOR_PATH} --identifier com.sscanss2.editor.pkg --version ${VER} --install-location "/Applications/sscanss-editor.app" editor.pkg
+pkgbuild --root ${SSCANSS_PATH} --identifier com.sscanss2.sscanss.pkg --version ${VER} --install-location "/Applications/sscanss.app" sscanss.pkg
 productbuild --sign ${DEV_TEAM_ID} --timestamp --distribution distribution.xml --resources . sscanss2.pkg
 
 # Notarise and staple
