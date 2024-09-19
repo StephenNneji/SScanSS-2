@@ -1,65 +1,65 @@
-name: Build
+# name: Build
 
-on:  
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+# on:  
+#   push:
+#     branches: [ master ]
+#   pull_request:
+#     branches: [ master ]
 
-concurrency:
-  group: ${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.head_ref || github.run_id }}
+#   cancel-in-progress: true
 
-jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [windows-latest, ubuntu-latest, macos-13]
-    runs-on: ${{ matrix.platform }}
+# jobs:
+#   build:
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         platform: [windows-latest, ubuntu-latest, macos-13]
+#     runs-on: ${{ matrix.platform }}
 
-    steps:
-    - uses: actions/checkout@v4
-    - uses: conda-incubator/setup-miniconda@v3
-      with:
-          activate-environment: sscanss
-          environment-file: environment.yaml
-          auto-activate-base: false
-    - name: Run unit-tests (Linux)
-      shell: bash -el {0}
-      if: runner.os == 'Linux'
-      run: |
-        conda init bash
-        conda activate sscanss
-        conda install -c conda-forge libstdcxx-ng
-        sudo apt-get update
-        sudo apt-get install xvfb libqt5x11extras5 libgl1-mesa-glx '^libxcb.*-dev'
-        xvfb-run --auto-servernum python make.py --build-all
-    - name: Run unit-tests (Windows)
-      if: runner.os == 'Windows'
-      shell: powershell
-      run: |
-        conda init powershell
-        conda activate sscanss
-        powershell .\3rdparty\install_opengl.ps1
-        python make.py --build-all
-    - name: Run unit-tests (Mac OS)
-      if: runner.os == 'macOS'
-      shell: bash -el {0}
-      run: |
-        conda init bash
-        conda activate sscanss
-        conda install -y -c conda-forge numpy==1.23.5 
-        python make.py --build-all
-    - name: Upload coverage files
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage (${{ runner.os }})
-        retention-days: 1
-        path: htmlcov
-    - name: Upload executable
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist (${{ runner.os }})
-        retention-days: 1
-        path: installer/bundle
+#     steps:
+#     - uses: actions/checkout@v4
+#     - uses: conda-incubator/setup-miniconda@v3
+#       with:
+#           activate-environment: sscanss
+#           environment-file: environment.yaml
+#           auto-activate-base: false
+#     - name: Run unit-tests (Linux)
+#       shell: bash -el {0}
+#       if: runner.os == 'Linux'
+#       run: |
+#         conda init bash
+#         conda activate sscanss
+#         conda install -c conda-forge libstdcxx-ng
+#         sudo apt-get update
+#         sudo apt-get install xvfb libqt5x11extras5 libgl1-mesa-glx '^libxcb.*-dev'
+#         xvfb-run --auto-servernum python make.py --build-all
+#     - name: Run unit-tests (Windows)
+#       if: runner.os == 'Windows'
+#       shell: powershell
+#       run: |
+#         conda init powershell
+#         conda activate sscanss
+#         powershell .\3rdparty\install_opengl.ps1
+#         python make.py --build-all
+#     - name: Run unit-tests (Mac OS)
+#       if: runner.os == 'macOS'
+#       shell: bash -el {0}
+#       run: |
+#         conda init bash
+#         conda activate sscanss
+#         conda install -y -c conda-forge numpy==1.23.5 
+#         python make.py --build-all
+#     - name: Upload coverage files
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: coverage (${{ runner.os }})
+#         retention-days: 1
+#         path: htmlcov
+#     - name: Upload executable
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: dist (${{ runner.os }})
+#         retention-days: 1
+#         path: installer/bundle
