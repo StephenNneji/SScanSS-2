@@ -88,6 +88,7 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
+          chmod 777 make.sh
           ./make.sh "$DEV_TEAM_ID"
         env:
           CODE_SIGNING_CERTIFICATE_BASE64: ${{ secrets.CODE_SIGNING_CERTIFICATE_BASE64 }}
