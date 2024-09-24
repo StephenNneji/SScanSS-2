@@ -7,6 +7,10 @@ DEV_TEAM_ID=$2
 API_CONNECT_ISSUER=$3
 API_CONNECT_KEY_ID=$4
 
+if if [[ ${VER:0:1} == 'v' ]]; then;
+    VER=${VER:1}
+fi
+
 # Sign code
 codesign -v --deep --force --options=runtime --entitlements ./entitlements.plist --sign ${DEV_TEAM_ID} --timestamp ${EDITOR_PATH}/Contents/Resources/*.dylib
 codesign -v --deep --force --options=runtime --entitlements ./entitlements.plist --sign ${DEV_TEAM_ID} --timestamp ${EDITOR_PATH}
@@ -14,7 +18,7 @@ codesign -v --deep --force --options=runtime --entitlements ./entitlements.plist
 codesign -v --deep --force --options=runtime --entitlements ./entitlements.plist --sign ${DEV_TEAM_ID} --timestamp ${SSCANSS_PATH}
 
 # Build Pkg
-sed -e 's/@VERSION@/${Ver}/g' distribution.xml.in > distribution.xml
+sed -e "s/@VERSION@/${Ver}/g" distribution.xml.in > distribution.xml
 pkgbuild --root ${EDITOR_PATH} --identifier com.sscanss2.editor.pkg --version ${VER} --install-location "/Applications/sscanss-editor.app" editor.pkg
 pkgbuild --root ${SSCANSS_PATH} --identifier com.sscanss2.sscanss.pkg --version ${VER} --install-location "/Applications/sscanss.app" sscanss.pkg
 productbuild --sign ${DEV_TEAM_ID} --timestamp --distribution distribution.xml --resources . sscanss2.pkg

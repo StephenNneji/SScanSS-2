@@ -9,10 +9,10 @@
         <line choice="com.sscanss2.pkg.sscanss"/>
         <line choice="com.sscanss2.pkg.editor"/>
     </choices-outline>
-    <choice id="com.sscanss2.pkg.sscanss" enabled="false" start_selected="true">
+    <choice id="com.sscanss2.pkg.sscanss" title="SScanSS 2" enabled="false" start_selected="true">
         <pkg-ref id="com.sscanss2.pkg.sscanss" version="@VERSION@" onConclusion="none">sscanss.pkg</pkg-ref>
     </choice>
-    <choice id="com.sscanss2.pkg.editor" visible="true">
+    <choice id="com.sscanss2.pkg.editor" title="Instrument Editor" start_selected="false">
         <pkg-ref id="com.sscanss2.pkg.editor" version="@VERSION@" onConclusion="none">editor.pkg</pkg-ref>
     </choice>
     </installer-gui-script>
