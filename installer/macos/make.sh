@@ -7,7 +7,7 @@ DEV_TEAM_ID=$2
 API_CONNECT_ISSUER=$3
 API_CONNECT_KEY_ID=$4
 
-if if [[ ${VER:0:1} == 'v' ]]; then;
+if [[ ${VER:0:1} == 'v' ]]; then
     VER=${VER:1}
 fi
 
