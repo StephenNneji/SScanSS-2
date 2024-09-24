@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
-    <title>SScanSS-2 v@VERSION@</title>
+    <title>SScanSS-2 @VERSION_NAME@</title>
     <license file="LICENSE" mime-type="text/plain"/>
     <pkg-ref id="com.sscanss2.pkg.sscanss"/>
     <pkg-ref id="com.sscanss2.pkg.editor"/>

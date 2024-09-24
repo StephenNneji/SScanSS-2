@@ -2,12 +2,13 @@
 
 SSCANSS_PATH="../bundle/app/sscanss.app"
 EDITOR_PATH="../bundle/editor.app"
-VER=$1
+VER_NAME=$1
+VER=$VER_NAME
 DEV_TEAM_ID=$2
 API_CONNECT_ISSUER=$3
 API_CONNECT_KEY_ID=$4
 
-if [[ ${VER:0:1} == 'v' ]]; then
+if [[ ${VER_NAME:0:1} == 'v' ]]; then
     VER=${VER:1}
 fi
 
@@ -18,7 +19,7 @@ codesign -v --deep --force --options=runtime --entitlements ./entitlements.plist
 codesign -v --deep --force --options=runtime --entitlements ./entitlements.plist --sign ${DEV_TEAM_ID} --timestamp ${SSCANSS_PATH}
 
 # Build Pkg
-sed -e "s/@VERSION@/${Ver}/g" distribution.xml.in > distribution.xml
+sed -e "s/@VERSION_NAME@/${VER_NAME}/g" -e "s/@VERSION@/${VER}/g" distribution.xml.in > distribution.xml
 pkgbuild --root ${EDITOR_PATH} --identifier com.sscanss2.editor.pkg --version ${VER} --install-location "/Applications/sscanss-editor.app" editor.pkg
 pkgbuild --root ${SSCANSS_PATH} --identifier com.sscanss2.sscanss.pkg --version ${VER} --install-location "/Applications/sscanss.app" sscanss.pkg
 productbuild --sign ${DEV_TEAM_ID} --timestamp --distribution distribution.xml --resources . sscanss2.pkg
